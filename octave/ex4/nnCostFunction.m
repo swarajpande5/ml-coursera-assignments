@@ -34,10 +34,33 @@ Theta2_grad = zeros(size(Theta2));
 % Instructions: You should complete the code by working through the
 %               following parts.
 %
+
+z2 = zeros(hidden_layer_size, 1);
+a2 = zeros(hidden_layer_size, 1);
+eX = [ones(m, 1) X];
+eXt = eX';
+for i = 1:m
+
 % Part 1: Feedforward the neural network and return the cost in the
 %         variable J. After implementing Part 1, you can verify that your
 %         cost function computation is correct by verifying the cost
 %         computed in ex4.m
+
+    z2 = Theta1 * eXt(:, i);
+    a2 = sigmoid(z2);
+    ea2 = [1; a2];
+    z3 = Theta2 * ea2;
+    a3 = sigmoid(z3);
+
+    y_i = zeros(num_labels, 1);
+    y_i(y(i)) = 1;
+    
+    J = J + sum(-1 * ((y_i .* log(a3)) + ((1-y_i).*log(1-a3))) );
+end
+J = J / m;
+Theta1sq = Theta1 .^2;
+Theta2sq = Theta2 .^2;
+J = J + ((lambda / (2 * m)) * ((sum(sum(Theta1sq(:,2:input_layer_size + 1)))) + (sum(sum(Theta2sq(:,2:hidden_layer_size+1)))))); 
 %
 % Part 2: Implement the backpropagation algorithm to compute the gradients
 %         Theta1_grad and Theta2_grad. You should return the partial derivatives of
@@ -53,6 +76,28 @@ Theta2_grad = zeros(size(Theta2));
 %         Hint: We recommend implementing backpropagation using a for-loop
 %               over the training examples if you are implementing it for the 
 %               first time.
+
+delta_accum_1 = zeros(size(Theta1));
+delta_accum_2 = zeros(size(Theta2));
+for t = 1:m
+    z2 = Theta1 * eXt(:, t);
+    a2 = sigmoid(z2);
+    ea2 = [1; a2];
+    z3 = Theta2 * ea2;
+    a3 = sigmoid(z3);
+    y_i = zeros(num_labels, 1);
+    y_i(y(t)) = 1;
+
+    delta3 = a3 - y_i;
+    delta2 = (Theta2')*(delta3) .* (sigmoidGradient([1; z2]));
+    delta_accum_1 = delta_accum_1 + (delta2(2:end) * eXt(:,t)');
+    delta_accum_2 = delta_accum_2 + (delta3 * ea2');
+end
+
+% Unregularized Gradient
+Theta1_grad = (1/m) * (delta_accum_1);
+Theta2_grad = (1/m) * (delta_accum_2);
+
 %
 % Part 3: Implement regularization with the cost function and gradients.
 %
@@ -62,7 +107,8 @@ Theta2_grad = zeros(size(Theta2));
 %               and Theta2_grad from Part 2.
 %
 
-
+Theta1_grad(:, 2:input_layer_size+1) = Theta1_grad(:, 2:input_layer_size+1) + lambda / m * Theta1(:, 2:input_layer_size+1);
+Theta2_grad(:, 2:hidden_layer_size+1) = Theta2_grad(:, 2:hidden_layer_size+1) + lambda / m * Theta2(:, 2:hidden_layer_size+1);
 
 
 
